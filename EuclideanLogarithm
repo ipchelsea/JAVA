@@ -1,0 +1,127 @@
+*
+ * CHELSEA T IP
+ */
+
+#include <cmath>
+#include <iostream>
+#include <vector>
+#include <sched.h>
+#include <chrono>
+#include <map>
+#include <sys/time.h>
+
+#define FIRST_NUM 8 // The first number for us to start at
+#define INC_NUM 20 // The amount to increment n by each time in graph mode
+
+/**
+ * Perform Euclid's algorithm to determine the GCD of two integers.
+ *
+ * @param a The first number
+ * @param b The second number
+ * @param outres A variable to hold the calculated GCD
+ * @return The number of modulo operations necessary to find the GCD
+ */
+inline int gcd(int a, int b, int &outres) {
+
+    int r;
+    int numOfMod = 0;
+
+
+    while (b != 0) { //iterative version
+        r = a % b;
+        a = b;
+        b = r;
+        numOfMod++; //increments the number of operations
+    }
+
+    outres = a; // Place the result of our GCD
+    return numOfMod; // Return the number of modulo operations
+}
+
+/**
+ * Iterate through the GCDs of a series of integer pairs below n and determine the one with the most
+ * modulo operations required to get its result.
+ *
+ * @param complx_ref The complexity data for each loop
+ * @param n The maximum number to iterate to. Should be > 8
+ */
+void do_euclid(std::map<int, int>& complx_ref, int n) {
+    // Use the std::chrono high resolution clock instead of the POSIX-y, non-portable gettimeofday()
+    std::chrono::high_resolution_clock::time_point start_time = std::chrono::high_resolution_clock::now();
+
+    int mod_max = 0;
+    int a = FIRST_NUM;
+    int a_max = a;
+    int b = FIRST_NUM;
+    int b_max = b;
+    int val_gcd = 0;
+    for (; a < n; a++) // Iterate through all n - 1
+    {
+        for (b = FIRST_NUM; b <= n; b++) // We add 1 to a because a = n - 1
+        {
+            int gcd_res;
+            int rc = gcd(a, b, gcd_res);
+            if (rc > mod_max) {
+                a_max = a;
+                b_max = b;
+                val_gcd = gcd_res;
+                mod_max = rc;
+            }
+        }
+    }
+   /* getTime HERE 
+    struct timeval startTime, endTime;
+    double t;
+    gettimeofday(&startTime, NULL);
+    gettimeofday(&endTime, NULL);
+
+    t = (double) ((endTime.tv_sec - startTime.tv_usec)*1000000 + (endTime.tv_sec - startTime.tv_usec));
+   */
+     
+    // Get the ending time for our function
+    std::chrono::high_resolution_clock::time_point end_time = std::chrono::high_resolution_clock::now();
+    int duration = (int) std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+
+    // Add to our discovered complexity vector
+    complx_ref[n] = mod_max;
+    
+    
+
+    // Print!
+    std::cout << "n = gcd("<< a_max << ", " << b_max << ") = " << val_gcd << " took "
+            << mod_max << " modulus operations ...time required = " << duration << "us" << std::endl;
+}
+
+int main(int argc, char** argv) {
+    
+    // Create a map to hold our complexity data
+    std::map<int, int> calculated_complexity;
+    
+    // Get the n value from the user
+    int n_max;
+    std::cout << "Enter max n: ";
+    std::cin >> n_max;
+    
+    /**
+     * Set the default scheduler to maximum priority.
+     *
+     * Since essentially all modern kernels are preemptable,
+     * By default there is a high degree of process jitter based
+     * On the default scheduler settings, so we set our nice value
+     * To SCHED_MAX. This also prevents automatic scheduler niceness
+     * Adjustment on some kernels. NOTE: To reduce latency even further,
+     * SCHED_RR or SCHED_FIFO can be used on Linux kernels with PREEMPT_RT.
+     */
+    struct sched_param s_param;
+    s_param.sched_priority = sched_get_priority_max(SCHED_OTHER);
+    int n = n_max;
+    do_euclid(calculated_complexity, n);
+    
+  
+    
+
+    
+   
+
+
+}
